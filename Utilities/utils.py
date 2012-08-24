@@ -2,28 +2,48 @@
 ##### Not type checked and argument names are kept intentionally generic to 
 ##### encourage reuse.
 from operator import attrgetter, itemgetter
+import re
 
-###### Utilities to operate on a single DomainCDD instance 
-### Note, all namedtuple methods are already inherited
-### http://docs.python.org/library/collections.html#collections.namedtuple 
+####################################################################################
+###### Utilities to operate on a single mutable or immutable object ################
+####################################################################################
 
-def from_file(manager, infile, warning=False):
-    ''' Take in CDD superfamilies file and creates namedtuples.  Requires RecordManager object passed 
+def alter_field(obj, field, func, verbose=True):
+    ''' Takes in a function (eg split('>')) and attempts to perform that on the data field passed in.
+        May be worth breaking this down to two functions, one for immutable, one for mutable so I don't
+        have to do this try statement every single iteration!
+        
+        For immutables like tuple, fget will raise an attributeerror, so most cases will fail automatically.'''
+    fget=attrgetter(field)
+    newval=func(fget(obj))  #Perhaps add a try statement
+    try:
+        setattr(obj, field, newval)  #If mutable, just set attribue (untested)   
+    except AttributeError:
+        obj=obj._replace( **{field:newval} )
+        
+    return obj
+    
+    
+###################################
+###### File IO utilities ##########
+###################################
+def from_file(manager, infile, skip_assignment=False, warning=False, parsecomments=True):
+    ''' Take in CDD superfamilies file and creates dataobjects.  Requires RecordManager object passed 
     in as well. Note, parser only enforces that lines of
-    the correct length are added.  Types are automatically set.'''
+    the correct length are added (THIS IS LIMITING).  Types are automatically set.
+    If skip_assignment is True, all typchecking is bypassed, and all fields will stay strings
+    and never be covnerted to fields.  This is useful only if you're analysis doesn't mind that 
+    every field is a string!'''
          
     lines=open(infile, 'r').readlines()
-    lines=(row.strip().split() for row in lines if len(row.strip().split())==14)
+    if parsecomments:  #MAY WANT TO JUST REPLACE WITH WITH A SKIP HEADER OPERATION, LESS MEMORY INTENSIVE
+        lines=(row for row in lines if not re.match('#', row))
+        
+    lines=(row.strip().split() for row in lines if len(row.strip().split())==len(manager.strict_fields) )
+               
+    if skip_assignment:
+        return tuple([manager._make_return(line) for line in lines])
     return tuple([manager._make(line, warning=warning) for line in lines])
-
-def get_uniquekey(obj, *valuefields, **kwargs):
-    ''' User passes in attributes and a keywordargument, 'delmiter', and this will sum them.  Useful for 
-    creating unique keys for dictionary use.  For example, if an object has attributes name and age,
-    I could return  "bill_50" from this method if the delimiter was '_' '''
-
-    delimiter=kwargs.pop(delimiter, '_')
-    return delimiter.join('%s' % obj.v for v in valuefields)
-    
 
 ####### Utilities designed for dictionary of DomainCDD objects 
 ####### (not type checked; terminology purposly generic) 
@@ -46,7 +66,7 @@ def get_fields(dic, *valuefields):
     ''' Returns all values of the *fields/attribue in a dictionary, keyed by attrname'''
     out={}
     for vfield in valuefields:
-        out[vfield]=get_field(dic, vfield)
+        out[vfield]=get_field(dic, vfield)  
     return out
     
 def get_subset(dic, *valuefields, **kwargs):
@@ -64,22 +84,35 @@ def get_subset(dic, *valuefields, **kwargs):
     kget=attrgetter(newkey)    
     return tuple( (kget(v), vget(v))  for k,v in dic.items() )
 
-def to_dic(iterable, keyfield=None):
-    ''' Take in an interable of manager return object, return a dictionary keyed automatically
-    by record method, get_unique_key.  Keyfield can also accept a valid attribute of DomainCDD'''
-    if keyfield==None:
-        return dict((get_uniquekey(v), v) for v in iterable)
-    kget=attrgetter(keyfield)    
-    return dict((kget(v), v) for v in iterable)
+def to_dic(iterable, *keyfields, **kwargs):
+    ''' Take in an interable of manager return object, return a dictionary keyed by the specified field attribute.
+        If more than one attribute is entered, then a unique key will be generated that is the concatenated attribute
+        values separated by a the key_delimiter (this is done by using the get_unique_key method).  For example,
+        if attribute field is name, then the name will simply be returned; however, if name and age are entered,
+        something like "Bill_18 will be returned.'''
+    key_delimiter=kwargs.pop('key_delimiter', '_')
+    kget=attrgetter(*keyfields)    
+    if len(keyfields) == 0:
+        raise TypeError('to dic method requires attribute fields')
+    elif len(keyfields) == 1:
+        return dict((kget(v), v) for v in iterable)
+    else:
+        return dict((key_delimiter.join(kget(v) ), v) for v in iterable)
 
-def histogram(cd_dic, *fields):
+def histogram(cd_dic, *fields, **kwargs):
     ''' Returns count of unique occurrences for a field in CDDomain record.  Literally it is counting the
     occurrences of a unique attribute.  In practice, this is useful for understanding the domain distribution
-    in the dataset.  Build to take in multple fields for flexibility.'''
+    in the dataset.  Build to take in multple fields for flexibility.
+    Keyword "sorted_return", if True, will sort the return in order of most to least'''
+    sorted_return=kwargs.pop('sorted_return', False)
+    reverse=kwargs.pop('reverse', True)  #If True, sorting is performed from greatest to least
     out={}
     for k, valuelist in get_fields(cd_dic, *fields).items():
         unique=list(set(valuelist))
-        out[k]=tuple([(v, valuelist.count(v)) for v in unique])
+        out[k]=[(v, valuelist.count(v)) for v in unique]
+        if sorted_return == True:
+            out[k].sort(key=itemgetter(1), reverse=reverse)  
+        out[k]=tuple(out[k]) 
     return out    
 
 ### Following methods are for data filtering.  Most likely already built into database functionality like SQL ###

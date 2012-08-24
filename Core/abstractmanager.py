@@ -77,8 +77,7 @@ class AbstractManager(object):
 
         ### Typecheck arguments ###
         for i in range(argslength):
-            arg=args[i] ; fieldtype=self._strict_types[i]
-            arg=self._typecheck(arg, fieldtype, warning)  #Will overwrite arguments as it goes
+            args[i]=self._typecheck(args[i], self._strict_types[i], warning)  #Will overwrite arguments as it goes
         return self._make_return(args)
         
     def dict_make(self, **kwargs):
@@ -89,7 +88,6 @@ class AbstractManager(object):
         for name, default in self.strict_fields.items():
             try:
                 value=kwargs[name]
-                print name, default
             except KeyError:
                 kwargs[name]=default #Throw the default value in if missing
             else:

@@ -2,10 +2,11 @@ from abstractmanager import AbstractManager
 from collections import namedtuple
 
 class ImmutableManager(AbstractManager):
-    ''' Class used to shell out mutable or immutable typedchecked records '''
+    ''' Class used to shell out mutable or immutable typedchecked records.'''
+    
     def __init__(self, *args, **kwargs):
         super(ImmutableManager, self).__init__(*args)
-        self.verbose=kwargs.pop('verbose', False)
+        self.verbose=kwargs.pop('verbose', False)       
 
         ### If mutable, return named tuple; otherwise, return object subclass
         vars(self)[self.typename]=namedtuple(self.typename, self.strict_fields.keys(), verbose=self.verbose)  #Creates a namedtuple class 
@@ -20,7 +21,7 @@ class ImmutableManager(AbstractManager):
 if __name__ == '__main__':	
     personfields=[
         ('name',str('unnamed') ), ('age',int() ), ('income',float() )
-    ]
+                  ]
     ### Construct the class builder ###
     personmanager=ImmutableManager('Person', personfields)
 

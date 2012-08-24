@@ -7,7 +7,6 @@ class Mutable(object):
     to the native one of namedtuple.  Very similar to the namedtuple of recordtype_2011 class.  Order is retained
     through how dictionaries are passed in through kwargs.'''
 
-    mutable=True #Metadata attribute
     def __init__(self, **kwargs):
         ''' Can initialize with dictionary of attribtues directly'''
         super(Mutable, self).__init__()
