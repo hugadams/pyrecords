@@ -1,0 +1,254 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pyrecords.Utilities.utils &mdash; PyRecords 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../static/agogo.css" type="text/css" />
+    <link rel="stylesheet" href="../../../static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../../static/underscore.js"></script>
+    <script type="text/javascript" src="../../../static/doctools.js"></script>
+    <link rel="top" title="PyRecords 0.1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="header-wrapper">
+      <div class="header">
+        <div class="headertitle"><a
+          href="../../../index.html">PyRecords 0.1 documentation</a></div>
+        <div class="rel">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a>
+        </div>
+       </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="content">
+        <div class="document">
+            
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pyrecords.Utilities.utils</h1><div class="highlight"><pre>
+<span class="c">##### Utilities functions for operating on individual DomainCDD objects and dictionaries of tem.</span>
+<span class="c">##### Not type checked and argument names are kept intentionally generic to </span>
+<span class="c">##### encourage reuse.</span>
+<span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">attrgetter</span><span class="p">,</span> <span class="n">itemgetter</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="c">####################################################################################</span>
+<span class="c">###### Utilities to operate on a single mutable or immutable object ################</span>
+<span class="c">####################################################################################</span>
+
+<div class="viewcode-block" id="alter_field"><a class="viewcode-back" href="../../../API/pyrecords.Utilities.html#pyrecords.Utilities.utils.alter_field">[docs]</a><span class="k">def</span> <span class="nf">alter_field</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Takes in a function (eg split(&#39;&gt;&#39;)) and attempts to perform that on the data field passed in.</span>
+<span class="sd">        May be worth breaking this down to two functions, one for immutable, one for mutable so I don&#39;t</span>
+<span class="sd">        have to do this try statement every single iteration!</span>
+<span class="sd">        </span>
+<span class="sd">        For immutables like tuple, fget will raise an attributeerror, so most cases will fail automatically.&#39;&#39;&#39;</span>
+    <span class="n">fget</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+    <span class="n">newval</span><span class="o">=</span><span class="n">func</span><span class="p">(</span><span class="n">fget</span><span class="p">(</span><span class="n">obj</span><span class="p">))</span>  <span class="c">#Perhaps add a try statement</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">newval</span><span class="p">)</span>  <span class="c">#If mutable, just set attribue (untested)   </span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="n">obj</span><span class="o">=</span><span class="n">obj</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span> <span class="o">**</span><span class="p">{</span><span class="n">field</span><span class="p">:</span><span class="n">newval</span><span class="p">}</span> <span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">obj</span>
+    
+    
+<span class="c">###################################</span>
+<span class="c">###### File IO utilities ##########</span>
+<span class="c">###################################</span></div>
+<div class="viewcode-block" id="from_file"><a class="viewcode-back" href="../../../API/pyrecords.Utilities.html#pyrecords.Utilities.utils.from_file">[docs]</a><span class="k">def</span> <span class="nf">from_file</span><span class="p">(</span><span class="n">manager</span><span class="p">,</span> <span class="n">infile</span><span class="p">,</span> <span class="n">skip_assignment</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">warning</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">parsecomments</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Take in CDD superfamilies file and creates dataobjects.  Requires RecordManager object passed </span>
+<span class="sd">    in as well. Note, parser only enforces that lines of</span>
+<span class="sd">    the correct length are added (THIS IS LIMITING).  Types are automatically set.</span>
+<span class="sd">    If skip_assignment is True, all typchecking is bypassed, and all fields will stay strings</span>
+<span class="sd">    and never be covnerted to fields.  This is useful only if you&#39;re analysis doesn&#39;t mind that </span>
+<span class="sd">    every field is a string!&#39;&#39;&#39;</span>
+         
+    <span class="n">lines</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">infile</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">parsecomments</span><span class="p">:</span>  <span class="c">#MAY WANT TO JUST REPLACE WITH WITH A SKIP HEADER OPERATION, LESS MEMORY INTENSIVE</span>
+        <span class="n">lines</span><span class="o">=</span><span class="p">(</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">lines</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;#&#39;</span><span class="p">,</span> <span class="n">row</span><span class="p">))</span>
+        
+    <span class="n">lines</span><span class="o">=</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">lines</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">manager</span><span class="o">.</span><span class="n">strict_fields</span><span class="p">)</span> <span class="p">)</span>
+               
+    <span class="k">if</span> <span class="n">skip_assignment</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">manager</span><span class="o">.</span><span class="n">_make_return</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">])</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">manager</span><span class="o">.</span><span class="n">_make</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">warning</span><span class="o">=</span><span class="n">warning</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">])</span>
+
+<span class="c">####### Utilities designed for dictionary of DomainCDD objects </span>
+<span class="c">####### (not type checked; terminology purposly generic) </span></div>
+<div class="viewcode-block" id="sortbyarg"><a class="viewcode-back" href="../../../API/pyrecords.Utilities.html#pyrecords.Utilities.utils.sortbyarg">[docs]</a><span class="k">def</span> <span class="nf">sortbyarg</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="o">*</span><span class="n">valuefields</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Enter list of fields/attribes to sort by.  For multiple field, will sort</span>
+<span class="sd">      in order of entry.  All values in dictionary must have attributes corresponding to these fields.</span>
+<span class="sd">      expects a dictionary of DomainCDD objects but should work in general.&#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">dic</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="o">*</span><span class="n">valuefields</span><span class="p">)))</span>   
+</div>
+<div class="viewcode-block" id="sortbyitem"><a class="viewcode-back" href="../../../API/pyrecords.Utilities.html#pyrecords.Utilities.utils.sortbyitem">[docs]</a><span class="k">def</span> <span class="nf">sortbyitem</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="o">*</span><span class="n">indicies</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Same as above but sorting by index&#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">dic</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="o">*</span><span class="n">indicies</span><span class="p">)))</span>   
+</div>
+<div class="viewcode-block" id="get_field"><a class="viewcode-back" href="../../../API/pyrecords.Utilities.html#pyrecords.Utilities.utils.get_field">[docs]</a><span class="k">def</span> <span class="nf">get_field</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="n">valuefield</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Returns all values of a single field/attribue (wrapper for attrgetter) as a tuple&#39;&#39;&#39;</span>
+    <span class="n">f</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="n">valuefield</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">f</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dic</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+</div>
+<div class="viewcode-block" id="get_fields"><a class="viewcode-back" href="../../../API/pyrecords.Utilities.html#pyrecords.Utilities.utils.get_fields">[docs]</a><span class="k">def</span> <span class="nf">get_fields</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="o">*</span><span class="n">valuefields</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Returns all values of the *fields/attribue in a dictionary, keyed by attrname&#39;&#39;&#39;</span>
+    <span class="n">out</span><span class="o">=</span><span class="p">{}</span>
+    <span class="k">for</span> <span class="n">vfield</span> <span class="ow">in</span> <span class="n">valuefields</span><span class="p">:</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">vfield</span><span class="p">]</span><span class="o">=</span><span class="n">get_field</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="n">vfield</span><span class="p">)</span>  
+    <span class="k">return</span> <span class="n">out</span>
+    </div>
+<div class="viewcode-block" id="get_subset"><a class="viewcode-back" href="../../../API/pyrecords.Utilities.html#pyrecords.Utilities.utils.get_subset">[docs]</a><span class="k">def</span> <span class="nf">get_subset</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="o">*</span><span class="n">valuefields</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Returns a new dictionary, with key and value fields defined by user.  There are</span>
+<span class="sd">        to keyword args to this function (python 2.x doesn&#39;t allow variable neght *args and</span>
+<span class="sd">        fixed keywords...)</span>
+<span class="sd">        newkey: User can pass a field which will become the newkey to the dictionary.  </span>
+<span class="sd">                If None, default keys of the original dictionary will be used.</span>
+<span class="sd">        valuetype: kw to determine how values are contained (tuple, list, DomainsCDD)&#39;&#39;&#39;</span>
+    <span class="n">newkey</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;newkey&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="n">valuetype</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;valuetype&#39;</span><span class="p">,</span> <span class="s">&#39;DomainsCDD&#39;</span><span class="p">)</span>  <span class="c">#For now, this is not yet implemented.</span>
+    <span class="n">vget</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="o">*</span><span class="n">valuefields</span><span class="p">)</span>        
+    <span class="k">if</span> <span class="n">newkey</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">vget</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">dic</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">)</span>  
+    <span class="n">kget</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="n">newkey</span><span class="p">)</span>    
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span> <span class="p">(</span><span class="n">kget</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">vget</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>  <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">dic</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="to_dic"><a class="viewcode-back" href="../../../API/pyrecords.Utilities.html#pyrecords.Utilities.utils.to_dic">[docs]</a><span class="k">def</span> <span class="nf">to_dic</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="o">*</span><span class="n">keyfields</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Take in an interable of manager return object, return a dictionary keyed by the specified field attribute.</span>
+<span class="sd">        If more than one attribute is entered, then a unique key will be generated that is the concatenated attribute</span>
+<span class="sd">        values separated by a the key_delimiter (this is done by using the get_unique_key method).  For example,</span>
+<span class="sd">        if attribute field is name, then the name will simply be returned; however, if name and age are entered,</span>
+<span class="sd">        something like &quot;Bill_18 will be returned.&#39;&#39;&#39;</span>
+    <span class="n">key_delimiter</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;key_delimiter&#39;</span><span class="p">,</span> <span class="s">&#39;_&#39;</span><span class="p">)</span>
+    <span class="n">kget</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="o">*</span><span class="n">keyfields</span><span class="p">)</span>    
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">keyfields</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;to dic method requires attribute fields&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">keyfields</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">((</span><span class="n">kget</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">((</span><span class="n">key_delimiter</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">kget</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="p">),</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="histogram"><a class="viewcode-back" href="../../../API/pyrecords.Utilities.html#pyrecords.Utilities.utils.histogram">[docs]</a><span class="k">def</span> <span class="nf">histogram</span><span class="p">(</span><span class="n">cd_dic</span><span class="p">,</span> <span class="o">*</span><span class="n">fields</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Returns count of unique occurrences for a field in CDDomain record.  Literally it is counting the</span>
+<span class="sd">    occurrences of a unique attribute.  In practice, this is useful for understanding the domain distribution</span>
+<span class="sd">    in the dataset.  Build to take in multple fields for flexibility.</span>
+<span class="sd">    Keyword &quot;sorted_return&quot;, if True, will sort the return in order of most to least&#39;&#39;&#39;</span>
+    <span class="n">sorted_return</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;sorted_return&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="n">reverse</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;reverse&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>  <span class="c">#If True, sorting is performed from greatest to least</span>
+    <span class="n">out</span><span class="o">=</span><span class="p">{}</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">valuelist</span> <span class="ow">in</span> <span class="n">get_fields</span><span class="p">(</span><span class="n">cd_dic</span><span class="p">,</span> <span class="o">*</span><span class="n">fields</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">unique</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">valuelist</span><span class="p">))</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">=</span><span class="p">[(</span><span class="n">v</span><span class="p">,</span> <span class="n">valuelist</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">unique</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">sorted_return</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">reverse</span><span class="o">=</span><span class="n">reverse</span><span class="p">)</span>  
+        <span class="n">out</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> 
+    <span class="k">return</span> <span class="n">out</span>    
+
+<span class="c">### Following methods are for data filtering.  Most likely already built into database functionality like SQL ###</span></div>
+<div class="viewcode-block" id="filter_if"><a class="viewcode-back" href="../../../API/pyrecords.Utilities.html#pyrecords.Utilities.utils.filter_if">[docs]</a><span class="k">def</span> <span class="nf">filter_if</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="o">**</span><span class="n">keyvals</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Iterate through dictionary, return entries if all passed attribute are equal.  For multiple</span>
+<span class="sd">    attributes, can pass special keyword, &quot;criteria&quot; which can have values &#39;all&#39; or &#39;any&#39;.  </span>
+<span class="sd">    If &#39;all&#39;, then all fields must be identical to retain object.  If &#39;any&#39;, then only one field must be.&#39;&#39;&#39;</span>
+    <span class="n">out</span><span class="o">=</span><span class="p">{}</span>
+    <span class="n">criteria</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;criteria&#39;</span><span class="p">,</span> <span class="s">&#39;all&#39;</span><span class="p">)</span>
+    <span class="n">vget</span><span class="o">=</span><span class="n">attrgetter</span><span class="p">(</span><span class="o">**</span><span class="n">keyvals</span><span class="p">)</span>
+    <span class="k">pass</span>   <span class="c">#FINISH</span>
+</div>
+<div class="viewcode-block" id="filter_by"><a class="viewcode-back" href="../../../API/pyrecords.Utilities.html#pyrecords.Utilities.utils.filter_by">[docs]</a><span class="k">def</span> <span class="nf">filter_by</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="o">**</span><span class="n">keyvals</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Pass numerical attributes in, will return all values that meet the &#39;criteria&#39;.  The filter</span>
+<span class="sd">    criteria keywords are &quot;equal&quot;, &quot;lessequal&quot;, &quot;less&quot;, &quot;greaterequal&quot;, &quot;greater&quot; &#39;&#39;&#39;</span>
+    <span class="n">validcrit</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;equal&#39;</span><span class="p">,</span> <span class="s">&#39;lessequal&#39;</span><span class="p">,</span> <span class="s">&#39;less&#39;</span><span class="p">,</span> <span class="s">&#39;greaterequal&#39;</span><span class="p">,</span> <span class="s">&#39;greater&#39;</span><span class="p">]</span>
+    <span class="n">criteria</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;criteria&#39;</span><span class="p">,</span> <span class="s">&#39;equal&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">validcrit</span> <span class="o">==</span> <span class="s">&#39;equal&#39;</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">validcrit</span> <span class="o">==</span> <span class="s">&#39;lessequal&#39;</span><span class="p">:</span>
+        <span class="k">pass</span>        
+    <span class="k">elif</span> <span class="n">validcrit</span> <span class="o">==</span> <span class="s">&#39;less&#39;</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">validcrit</span> <span class="o">==</span> <span class="s">&#39;greaterequal&#39;</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">validcrit</span> <span class="o">==</span> <span class="s">&#39;greater&#39;</span><span class="p">:</span>
+        <span class="k">pass</span>    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s">&#39;Criteria messed up in filter_bny&#39;</span><span class="p">)</span> <span class="c">#Replace later</span>
+    </div>
+<div class="viewcode-block" id="dic_to_file"><a class="viewcode-back" href="../../../API/pyrecords.Utilities.html#pyrecords.Utilities.utils.dic_to_file">[docs]</a><span class="k">def</span> <span class="nf">dic_to_file</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="n">outfilename</span><span class="p">,</span> <span class="n">delim</span><span class="o">=</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Used to output a dictionary to a file whose values are iterables.  LATER MAKE IT BE ABLE TO TAKE IN </span>
+<span class="sd">    SINGLE VALUED VALUES SO IT WORKS FOR ITERABLES AND SINGLEVALUES.&#39;&#39;&#39;</span>
+    <span class="n">f</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">outfilename</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">dic</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<span class="c">#        if type(value) == str:</span>
+ <span class="c">#           outstring=            </span>
+        <span class="n">outstring</span><span class="o">=</span><span class="n">key</span> <span class="o">+</span> <span class="n">delim</span> <span class="o">+</span> <span class="n">delim</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">outstring</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span> </div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+        </div>
+        <div class="sidebar">
+          <h3>Table Of Contents</h3>
+          <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../Tutorial/getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../API/pyrecords.html">API</a></li>
+</ul>
+
+          <h3 style="margin-top: 1.5em;">Search</h3>
+          <form class="search" action="../../../search.html" method="get">
+            <input type="text" name="q" />
+            <input type="submit" value="Go" />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+          </form>
+          <p class="searchtip" style="font-size: 90%">
+            Enter search terms or a module, class or function name.
+          </p>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+    <div class="footer-wrapper">
+      <div class="footer">
+        <div class="left">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a>
+        </div>
+
+        <div class="right">
+          
+    <div class="footer">
+        &copy; Copyright 2012, Adam Hughes.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+  </body>
+</html>
