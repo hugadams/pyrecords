@@ -1,0 +1,217 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Utilities &mdash; PyRecords 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../static/agogo.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="PyRecords 0.1 documentation" href="../index.html" />
+    <link rel="up" title="API" href="pyrecords.html" />
+    <link rel="prev" title="Manager Classes" href="pyrecords.Core.html" /> 
+  </head>
+  <body>
+    <div class="header-wrapper">
+      <div class="header">
+        <div class="headertitle"><a
+          href="../index.html">PyRecords 0.1 documentation</a></div>
+        <div class="rel">
+          <a href="pyrecords.Core.html" title="Manager Classes"
+             accesskey="P">previous</a> |
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a>
+        </div>
+       </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="content">
+        <div class="document">
+            
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="utilities">
+<h1>Utilities<a class="headerlink" href="#utilities" title="Permalink to this headline">¶</a></h1>
+<p>Utilities store a set of functions that act in general on immutable or mutable containers.  These are very common and useful operations for maniupulating
+field data.  The goal here is to build general and useful functions that work with any of the manager classes, and are common to a wide range of data analysis domains.</p>
+<div class="section" id="module-pyrecords.Utilities.utils">
+<span id="utils-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">utils</span></tt> Module<a class="headerlink" href="#module-pyrecords.Utilities.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pyrecords.Utilities.utils.alter_field">
+<tt class="descclassname">pyrecords.Utilities.utils.</tt><tt class="descname">alter_field</tt><big>(</big><em>obj</em>, <em>field</em>, <em>func</em>, <em>verbose=True</em><big>)</big><a class="reference internal" href="../modules/pyrecords/Utilities/utils.html#alter_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyrecords.Utilities.utils.alter_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes in a function (eg split(&#8216;&gt;&#8217;)) and attempts to perform that on the data field passed in.
+May be worth breaking this down to two functions, one for immutable, one for mutable so I don&#8217;t
+have to do this try statement every single iteration!</p>
+<p>For immutables like tuple, fget will raise an attributeerror, so most cases will fail automatically.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyrecords.Utilities.utils.dic_to_file">
+<tt class="descclassname">pyrecords.Utilities.utils.</tt><tt class="descname">dic_to_file</tt><big>(</big><em>dic</em>, <em>outfilename</em>, <em>delim='\t'</em><big>)</big><a class="reference internal" href="../modules/pyrecords/Utilities/utils.html#dic_to_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyrecords.Utilities.utils.dic_to_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to output a dictionary to a file whose values are iterables.  LATER MAKE IT BE ABLE TO TAKE IN 
+SINGLE VALUED VALUES SO IT WORKS FOR ITERABLES AND SINGLEVALUES.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyrecords.Utilities.utils.filter_by">
+<tt class="descclassname">pyrecords.Utilities.utils.</tt><tt class="descname">filter_by</tt><big>(</big><em>dic</em>, <em>**keyvals</em><big>)</big><a class="reference internal" href="../modules/pyrecords/Utilities/utils.html#filter_by"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyrecords.Utilities.utils.filter_by" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pass numerical attributes in, will return all values that meet the &#8216;criteria&#8217;.  The filter
+criteria keywords are &#8220;equal&#8221;, &#8220;lessequal&#8221;, &#8220;less&#8221;, &#8220;greaterequal&#8221;, &#8220;greater&#8221;</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyrecords.Utilities.utils.filter_if">
+<tt class="descclassname">pyrecords.Utilities.utils.</tt><tt class="descname">filter_if</tt><big>(</big><em>dic</em>, <em>**keyvals</em><big>)</big><a class="reference internal" href="../modules/pyrecords/Utilities/utils.html#filter_if"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyrecords.Utilities.utils.filter_if" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate through dictionary, return entries if all passed attribute are equal.  For multiple
+attributes, can pass special keyword, &#8220;criteria&#8221; which can have values &#8216;all&#8217; or &#8216;any&#8217;.  
+If &#8216;all&#8217;, then all fields must be identical to retain object.  If &#8216;any&#8217;, then only one field must be.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyrecords.Utilities.utils.from_file">
+<tt class="descclassname">pyrecords.Utilities.utils.</tt><tt class="descname">from_file</tt><big>(</big><em>manager</em>, <em>infile</em>, <em>skip_assignment=False</em>, <em>warning=False</em>, <em>parsecomments=True</em><big>)</big><a class="reference internal" href="../modules/pyrecords/Utilities/utils.html#from_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyrecords.Utilities.utils.from_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take in CDD superfamilies file and creates dataobjects.  Requires RecordManager object passed 
+in as well. Note, parser only enforces that lines of
+the correct length are added (THIS IS LIMITING).  Types are automatically set.
+If skip_assignment is True, all typchecking is bypassed, and all fields will stay strings
+and never be covnerted to fields.  This is useful only if you&#8217;re analysis doesn&#8217;t mind that 
+every field is a string!</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyrecords.Utilities.utils.get_field">
+<tt class="descclassname">pyrecords.Utilities.utils.</tt><tt class="descname">get_field</tt><big>(</big><em>dic</em>, <em>valuefield</em><big>)</big><a class="reference internal" href="../modules/pyrecords/Utilities/utils.html#get_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyrecords.Utilities.utils.get_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all values of a single field/attribue (wrapper for attrgetter) as a tuple</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyrecords.Utilities.utils.get_fields">
+<tt class="descclassname">pyrecords.Utilities.utils.</tt><tt class="descname">get_fields</tt><big>(</big><em>dic</em>, <em>*valuefields</em><big>)</big><a class="reference internal" href="../modules/pyrecords/Utilities/utils.html#get_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyrecords.Utilities.utils.get_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all values of the <a href="#id1"><span class="problematic" id="id2">*</span></a>fields/attribue in a dictionary, keyed by attrname</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyrecords.Utilities.utils.get_subset">
+<tt class="descclassname">pyrecords.Utilities.utils.</tt><tt class="descname">get_subset</tt><big>(</big><em>dic</em>, <em>*valuefields</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../modules/pyrecords/Utilities/utils.html#get_subset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyrecords.Utilities.utils.get_subset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new dictionary, with key and value fields defined by user.  There are
+to keyword args to this function (python 2.x doesn&#8217;t allow variable neght <a href="#id3"><span class="problematic" id="id4">*</span></a>args and
+fixed keywords...)
+newkey: User can pass a field which will become the newkey to the dictionary.</p>
+<blockquote>
+<div>If None, default keys of the original dictionary will be used.</div></blockquote>
+<p>valuetype: kw to determine how values are contained (tuple, list, DomainsCDD)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyrecords.Utilities.utils.histogram">
+<tt class="descclassname">pyrecords.Utilities.utils.</tt><tt class="descname">histogram</tt><big>(</big><em>cd_dic</em>, <em>*fields</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../modules/pyrecords/Utilities/utils.html#histogram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyrecords.Utilities.utils.histogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns count of unique occurrences for a field in CDDomain record.  Literally it is counting the
+occurrences of a unique attribute.  In practice, this is useful for understanding the domain distribution
+in the dataset.  Build to take in multple fields for flexibility.
+Keyword &#8220;sorted_return&#8221;, if True, will sort the return in order of most to least</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyrecords.Utilities.utils.sortbyarg">
+<tt class="descclassname">pyrecords.Utilities.utils.</tt><tt class="descname">sortbyarg</tt><big>(</big><em>dic</em>, <em>*valuefields</em><big>)</big><a class="reference internal" href="../modules/pyrecords/Utilities/utils.html#sortbyarg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyrecords.Utilities.utils.sortbyarg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enter list of fields/attribes to sort by.  For multiple field, will sort
+in order of entry.  All values in dictionary must have attributes corresponding to these fields.
+expects a dictionary of DomainCDD objects but should work in general.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyrecords.Utilities.utils.sortbyitem">
+<tt class="descclassname">pyrecords.Utilities.utils.</tt><tt class="descname">sortbyitem</tt><big>(</big><em>dic</em>, <em>*indicies</em><big>)</big><a class="reference internal" href="../modules/pyrecords/Utilities/utils.html#sortbyitem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyrecords.Utilities.utils.sortbyitem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as above but sorting by index</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyrecords.Utilities.utils.to_dic">
+<tt class="descclassname">pyrecords.Utilities.utils.</tt><tt class="descname">to_dic</tt><big>(</big><em>iterable</em>, <em>*keyfields</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../modules/pyrecords/Utilities/utils.html#to_dic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyrecords.Utilities.utils.to_dic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take in an interable of manager return object, return a dictionary keyed by the specified field attribute.
+If more than one attribute is entered, then a unique key will be generated that is the concatenated attribute
+values separated by a the key_delimiter (this is done by using the get_unique_key method).  For example,
+if attribute field is name, then the name will simply be returned; however, if name and age are entered,
+something like &#8220;Bill_18 will be returned.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+        </div>
+        <div class="sidebar">
+          <h3>Table Of Contents</h3>
+          <ul>
+<li class="toctree-l1"><a class="reference internal" href="../Tutorial/getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyrecords.html">API</a></li>
+</ul>
+
+          <h3 style="margin-top: 1.5em;">Search</h3>
+          <form class="search" action="../search.html" method="get">
+            <input type="text" name="q" />
+            <input type="submit" value="Go" />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+          </form>
+          <p class="searchtip" style="font-size: 90%">
+            Enter search terms or a module, class or function name.
+          </p>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+    <div class="footer-wrapper">
+      <div class="footer">
+        <div class="left">
+          <a href="pyrecords.Core.html" title="Manager Classes"
+             >previous</a> |
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |
+          <a href="../genindex.html" title="General Index"
+             >index</a>
+            <br/>
+            <a href="../sources/API/pyrecords.Utilities.txt"
+               rel="nofollow">Show Source</a>
+        </div>
+
+        <div class="right">
+          
+    <div class="footer">
+        &copy; Copyright 2012, Adam Hughes.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+  </body>
+</html>
