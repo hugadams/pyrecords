@@ -53,6 +53,8 @@ def sortbyarg(dic, *valuefields):
       expects a dictionary of DomainCDD objects but should work in general.'''
     return tuple(sorted(dic.values(), key=attrgetter(*valuefields)))   
 
+### MAKE THESE WORK WITH DIC OR TUPLE!?!?
+
 def sortbyitem(dic, *indicies):
     ''' Same as above but sorting by index'''
     return tuple(sorted(dic.values(), key=itemgetter(*indicies)))   
@@ -97,7 +99,8 @@ def to_dic(iterable, *keyfields, **kwargs):
     elif len(keyfields) == 1:
         return dict((kget(v), v) for v in iterable)
     else:
-        return dict((key_delimiter.join(kget(v) ), v) for v in iterable)
+        return dict( (key_delimiter.join([str(i) for i in kget(v)] ), v) for v in iterable) 
+
 
 def histogram(cd_dic, *fields, **kwargs):
     ''' Returns count of unique occurrences for a field in CDDomain record.  Literally it is counting the
